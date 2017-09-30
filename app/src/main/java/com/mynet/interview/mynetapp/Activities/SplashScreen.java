@@ -9,36 +9,22 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.mynet.interview.mynetapp.Database.NewsSQL;
-import com.mynet.interview.mynetapp.Helper.MyApplication;
 import com.mynet.interview.mynetapp.Models.News;
 import com.mynet.interview.mynetapp.R;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
 
 
 /**
@@ -52,11 +38,33 @@ public class SplashScreen extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
-        
+
         if (isConnected()){
             new PrefetchData().execute();
-        }
+            Log.e("network","true");
+        }else{
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
 
+                    if (!isFinishing()){
+                       final AlertDialog.Builder alert =  new AlertDialog.Builder(SplashScreen.this)
+                                .setTitle("Uyarı!")
+                                .setMessage("İnternet Bağlantınızı Kontrol Ediniz!")
+                                .setCancelable(false)
+                                .setPositiveButton("Tamam", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        SplashScreen.this.finishAffinity();
+                                        System.exit(0);
+                                    }
+                                });
+                        alert.show();
+                    }
+                }
+            });
+
+        }
     }
 
     private class PrefetchData extends AsyncTask<Void, Void, String> {
@@ -105,13 +113,6 @@ public class SplashScreen extends Activity {
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            if (result == null){
-                Toast.makeText(getApplicationContext(),"Internet Bağlantınızı Kontrol Ediniz!",Toast.LENGTH_SHORT).show();
-
-                finishAffinity();
-                System.exit(0);
-                return;
-            }
             try {
                 JSONArray arr = new JSONArray(result);
                 NewsSQL sql = new NewsSQL(getApplicationContext());
@@ -146,7 +147,6 @@ public class SplashScreen extends Activity {
 
             finish();
         }
-
     }
 
     public boolean isConnected() {
